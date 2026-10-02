@@ -346,26 +346,7 @@ function wireInteractions(): void {
 
   document.querySelector<HTMLInputElement>("#inline-search-input")?.addEventListener("input", (event) => {
     searchQuery = (event.currentTarget as HTMLInputElement).value;
-    const entries = libraryEntries();
-    const grid = document.querySelector<HTMLElement>(".library-grid");
-    const empty = document.querySelector<HTMLElement>(".empty-state");
-
-    const markup = entries.map((entry) =>
-      entry.type === "series"
-        ? '<button class="cover-button" type="button" data-nav="series/' + entry.id + '">' + seriesCover(entry.series) + '</button>'
-        : '<button class="cover-button" type="button" data-reader="' + entry.id + '">' + cover(entry.book) + '</button>'
-    ).join("");
-
-    if (grid) {
-      grid.innerHTML = markup;
-      wireLibraryLinks(grid);
-    } else if (entries.length && empty) {
-      empty.outerHTML = '<div class="library-grid">' + markup + '</div>';
-      const newGrid = document.querySelector<HTMLElement>(".library-grid");
-      if (newGrid) wireLibraryLinks(newGrid);
-    } else if (!entries.length && grid) {
-      grid.outerHTML = '<div class="empty-state">No books found</div>';
-    }
+    render();
   });
 
   document.querySelector<HTMLButtonElement>("#open-sort")?.addEventListener("click", () => {
@@ -380,16 +361,6 @@ function wireInteractions(): void {
       sortOpen = false;
       render();
     });
-  });
-}
-
-function wireLibraryLinks(root: HTMLElement): void {
-  root.querySelectorAll<HTMLElement>("[data-nav]").forEach((element) => {
-    element.addEventListener("click", () => navigate(element.dataset.nav ?? ""));
-  });
-
-  root.querySelectorAll<HTMLElement>("[data-reader]").forEach((element) => {
-    element.addEventListener("click", () => navigate("reader/" + element.dataset.reader));
   });
 }
 
