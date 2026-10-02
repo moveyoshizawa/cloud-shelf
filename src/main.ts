@@ -1,6 +1,6 @@
 import "./styles/app.css";
-import { continueItems, librarySections } from "./mock/library";
-import type { ContentKind } from "./types";
+import { continueItems, shelves } from "./mock/library";
+import type { ContentKind, ShelfItem } from "./types";
 
 const labels: Record<ContentKind, string> = {
   book: "Read",
@@ -10,45 +10,41 @@ const labels: Record<ContentKind, string> = {
   document: "Open",
 };
 
-const glyphs: Record<ContentKind, string> = {
-  book: "B",
-  music: "M",
-  game: "G",
-  video: "V",
-  document: "F",
-};
+function coverMarkup(item: ShelfItem, size: "continue" | "shelf"): string {
+  const progress =
+    item.progress !== undefined
+      ? `<span class="cover-progress" aria-hidden="true"><span style="--progress: ${Math.round(item.progress * 100)}%"></span></span>`
+      : "";
 
-const continueMarkup = continueItems
+  return `
+    <button class="cover-card cover-card--${size} cover-card--${item.kind}" type="button" aria-label="${labels[item.kind]} ${item.title}">
+      <span class="cover-art" style="--cover-accent: ${item.accent}">
+        <span class="cover-mark" aria-hidden="true">${item.title.slice(0, 1)}</span>
+        ${progress}
+      </span>
+      <span class="cover-title">${item.title}</span>
+      ${item.subtitle ? `<span class="cover-subtitle">${item.subtitle}</span>` : ""}
+    </button>
+  `;
+}
+
+const continueMarkup = continueItems.map((item) => coverMarkup(item, "continue")).join("");
+
+const shelvesMarkup = shelves
   .map(
-    (item) => `
-      <button class="continue-card" type="button" aria-label="${labels[item.kind]} ${item.title}">
-        <div class="card-art" style="--card-accent: ${item.accent}"></div>
-        <div class="card-copy">
-          <p class="card-kicker">${labels[item.kind]}</p>
-          <h3 class="card-title">${item.title}</h3>
-          <p class="card-subtitle">${item.subtitle}</p>
+    (shelf) => `
+      <section class="shelf-section" aria-labelledby="shelf-${shelf.id}">
+        <div class="shelf-heading">
+          <div>
+            <h2 class="shelf-title" id="shelf-${shelf.id}">${shelf.title}</h2>
+            <span class="shelf-count">${shelf.count}</span>
+          </div>
+          <button class="shelf-more" type="button" aria-label="See all ${shelf.title}">See All</button>
         </div>
-        ${
-          item.progress !== undefined
-            ? `<div class="progress" aria-hidden="true"><span style="--progress: ${Math.round(item.progress * 100)}%"></span></div>`
-            : ""
-        }
-      </button>
-    `,
-  )
-  .join("");
-
-const libraryMarkup = librarySections
-  .map(
-    (section) => `
-      <button class="library-row" type="button" aria-label="Open ${section.title}">
-        <span class="library-icon" style="--row-accent: ${section.accent}">${glyphs[section.id]}</span>
-        <span>
-          <span class="library-title">${section.title}</span>
-          <span class="library-subtitle">${section.subtitle}</span>
-        </span>
-        <span class="library-count">${section.count}<span class="chevron" aria-hidden="true">›</span></span>
-      </button>
+        <div class="shelf-track">
+          ${shelf.items.map((item) => coverMarkup(item, "shelf")).join("")}
+        </div>
+      </section>
     `,
   )
   .join("");
@@ -57,28 +53,26 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <main class="app-shell">
     <header class="topbar">
       <h1 class="brand">Cloud Shelf</h1>
-      <button class="search-button" id="open-search" type="button" aria-label="Search library">Search</button>
+      <button class="search-button" id="open-search" type="button" aria-label="Search library">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5"></circle>
+          <path d="m16 16 4 4"></path>
+        </svg>
+      </button>
     </header>
 
-    <section class="section" aria-labelledby="continue-title">
-      <div class="section-heading">
-        <h2 class="section-title" id="continue-title">Continue</h2>
-        <span class="section-note">Pick up where you left off</span>
+    <section class="continue-section" aria-labelledby="continue-title">
+      <div class="shelf-heading">
+        <h2 class="shelf-title" id="continue-title">Continue</h2>
       </div>
-      <div class="continue-grid">
+      <div class="continue-track">
         ${continueMarkup}
       </div>
     </section>
 
-    <section class="section" aria-labelledby="library-title">
-      <div class="section-heading">
-        <h2 class="section-title" id="library-title">Library</h2>
-        <span class="section-note">Your files, by purpose</span>
-      </div>
-      <div class="library-list">
-        ${libraryMarkup}
-      </div>
-    </section>
+    <div class="library-shelves">
+      ${shelvesMarkup}
+    </div>
   </main>
 
   <div class="search-overlay" id="search-overlay" hidden>
@@ -87,7 +81,6 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
         <input id="search-input" type="search" inputmode="search" placeholder="Search your library" aria-label="Search your library" />
         <button id="close-search" type="button">Done</button>
       </div>
-      <div class="search-hint">Search stays quiet until you need it.</div>
     </div>
   </div>
 `;

@@ -13,6 +13,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
   background: var(--bg);
   color: var(--text);
 }
@@ -41,20 +42,22 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-bottom: var(--space-12);
+  margin-bottom: var(--space-10);
 }
 
 .brand {
   margin: 0;
-  font-size: clamp(30px, 4vw, 46px);
-  font-weight: 700;
-  letter-spacing: -0.045em;
+  font-size: clamp(31px, 4vw, 45px);
+  font-weight: 720;
+  letter-spacing: -0.05em;
 }
 
 .search-button {
-  min-width: var(--tap-target);
+  display: grid;
+  place-items: center;
+  width: var(--tap-target);
   height: var(--tap-target);
-  padding: 0 var(--space-4);
+  padding: 0;
   border: 0;
   border-radius: 999px;
   background: var(--surface);
@@ -63,184 +66,208 @@ button {
   cursor: pointer;
 }
 
-.search-button:active,
-.continue-card:active,
-.library-row:active {
-  transform: scale(0.985);
+.search-button svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
 }
 
-.section + .section {
-  margin-top: var(--space-12);
+.continue-section {
+  margin-bottom: var(--space-12);
 }
 
-.section-heading {
+.library-shelves {
+  display: grid;
+  gap: var(--space-12);
+}
+
+.shelf-heading {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: var(--space-5);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
-.section-title {
+.shelf-heading > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.shelf-title {
   margin: 0;
   font-size: 22px;
-  letter-spacing: -0.025em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
 }
 
-.section-note {
+.shelf-count {
   color: var(--text-secondary);
   font-size: 14px;
 }
 
-.continue-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-.continue-card {
-  position: relative;
-  min-height: 250px;
-  padding: var(--space-6);
-  overflow: hidden;
+.shelf-more {
+  min-height: var(--tap-target);
+  padding: 0;
   border: 0;
-  border-radius: var(--radius-lg);
-  text-align: left;
-  background: var(--surface-solid);
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  transition: transform 120ms ease;
-}
-
-.card-art {
-  position: absolute;
-  inset: 0;
-  background: var(--card-accent);
-}
-
-.card-art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.56), transparent 62%);
-}
-
-.card-copy {
-  position: absolute;
-  left: var(--space-6);
-  right: var(--space-6);
-  bottom: var(--space-6);
-  z-index: 1;
-  color: white;
-}
-
-.card-kicker {
-  margin: 0 0 var(--space-2);
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.8;
-}
-
-.card-title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.035em;
-}
-
-.card-subtitle {
-  margin: var(--space-1) 0 0;
+  background: transparent;
+  color: var(--text-secondary);
   font-size: 14px;
-  opacity: 0.78;
+  cursor: pointer;
 }
 
-.progress {
-  position: absolute;
-  left: var(--space-6);
-  right: var(--space-6);
-  bottom: var(--space-4);
-  height: 3px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.25);
-  z-index: 2;
-}
-
-.progress > span {
-  display: block;
-  height: 100%;
-  width: var(--progress);
-  border-radius: inherit;
-  background: white;
-}
-
-.library-list {
-  overflow: hidden;
-  border: 1px solid var(--separator);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-.library-row {
+.continue-track,
+.shelf-track {
   display: grid;
-  grid-template-columns: 52px 1fr auto;
-  align-items: center;
-  gap: var(--space-4);
-  width: 100%;
-  min-height: 82px;
-  padding: var(--space-3) var(--space-5);
+  grid-auto-flow: column;
+  justify-content: start;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: inline proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.continue-track::-webkit-scrollbar,
+.shelf-track::-webkit-scrollbar {
+  display: none;
+}
+
+.continue-track {
+  grid-auto-columns: clamp(180px, 24vw, 250px);
+  gap: var(--space-5);
+  padding: var(--space-1) var(--space-1) var(--space-3);
+}
+
+.shelf-track {
+  grid-auto-columns: clamp(135px, 16vw, 180px);
+  gap: var(--space-5);
+  padding: var(--space-1) var(--space-1) var(--space-2);
+}
+
+.cover-card {
+  display: block;
+  min-width: 0;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid var(--separator);
   background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: transform 120ms ease, background 120ms ease;
+  scroll-snap-align: start;
+  transition: transform 120ms ease;
 }
 
-.library-row:last-child {
-  border-bottom: 0;
+.cover-card:active,
+.search-button:active,
+.shelf-more:active {
+  transform: scale(0.985);
 }
 
-.library-row:hover {
-  background: color-mix(in srgb, var(--surface-solid) 45%, transparent);
+.cover-art {
+  position: relative;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--cover-accent);
+  box-shadow: 0 13px 30px rgba(25, 24, 21, 0.11);
 }
 
-.library-icon {
-  display: grid;
-  place-items: center;
-  width: 52px;
+.cover-card--continue .cover-art {
+  aspect-ratio: 4 / 5;
+}
+
+.cover-card--shelf.cover-card--music .cover-art {
   aspect-ratio: 1;
-  border-radius: var(--radius-sm);
-  color: white;
-  background: var(--row-accent);
-  font-size: 19px;
-  font-weight: 700;
 }
 
-.library-title {
-  margin: 0;
-  font-size: 17px;
+.cover-card--shelf.cover-card--book .cover-art,
+.cover-card--shelf.cover-card--game .cover-art,
+.cover-card--shelf.cover-card--video .cover-art {
+  aspect-ratio: 2 / 3;
+}
+
+.cover-card--shelf.cover-card--document .cover-art {
+  aspect-ratio: 3 / 4;
+}
+
+.cover-art::before,
+.cover-art::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.cover-art::before {
+  width: 58%;
+  aspect-ratio: 1;
+  top: -16%;
+  right: -18%;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 50%;
+}
+
+.cover-art::after {
+  left: 12%;
+  right: 12%;
+  bottom: 13%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.cover-mark {
+  position: absolute;
+  left: 12%;
+  bottom: 17%;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: clamp(25px, 4vw, 44px);
+  font-weight: 720;
+  letter-spacing: -0.05em;
+}
+
+.cover-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.cover-progress > span {
+  display: block;
+  width: var(--progress);
+  height: 100%;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.cover-title,
+.cover-subtitle {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cover-title {
+  margin-top: var(--space-3);
+  font-size: 15px;
   font-weight: 650;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.018em;
 }
 
-.library-subtitle {
-  margin: var(--space-1) 0 0;
+.cover-card--continue .cover-title {
+  font-size: 17px;
+}
+
+.cover-subtitle {
+  margin-top: var(--space-1);
   color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.library-count {
-  color: var(--text-secondary);
-  font-size: 14px;
-}
-
-.chevron {
-  margin-left: var(--space-2);
-  opacity: 0.36;
+  font-size: 13px;
 }
 
 .search-overlay {
@@ -296,13 +323,6 @@ button {
   cursor: pointer;
 }
 
-.search-hint {
-  padding: var(--space-5);
-  color: var(--text-secondary);
-  text-align: center;
-  font-size: 14px;
-}
-
 @media (max-width: 760px) {
   .app-shell {
     padding-left: var(--space-4);
@@ -313,16 +333,26 @@ button {
     margin-bottom: var(--space-8);
   }
 
-  .continue-grid {
-    grid-template-columns: 1fr;
+  .continue-section {
+    margin-bottom: var(--space-10);
   }
 
-  .continue-card {
-    min-height: 190px;
+  .library-shelves {
+    gap: var(--space-10);
   }
 
-  .section + .section {
-    margin-top: var(--space-10);
+  .continue-track {
+    grid-auto-columns: min(66vw, 230px);
+  }
+
+  .shelf-track {
+    grid-auto-columns: min(38vw, 165px);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .cover-art {
+    box-shadow: 0 13px 34px rgba(0, 0, 0, 0.24);
   }
 }
 

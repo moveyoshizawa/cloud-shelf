@@ -1,18 +1,17 @@
 export type ContentKind = "book" | "music" | "game" | "video" | "document";
 
-export interface ContinueItem {
+export interface ShelfItem {
   id: string;
   kind: ContentKind;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   progress?: number;
   accent: string;
 }
 
-export interface LibrarySection {
+export interface ShelfSection {
   id: ContentKind;
   title: string;
-  subtitle: string;
   count: number;
-  accent: string;
+  items: ShelfItem[];
 }
