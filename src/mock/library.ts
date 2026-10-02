@@ -1,100 +1,72 @@
-import type { Book, BookFolder } from "../types";
+import type { Book, Series } from "../types";
 
-export const books: Book[] = [
-  {
-    id: "quiet-city-01",
-    title: "Quiet City",
-    author: "Volume 01",
-    folder: "Manga / Quiet City",
-    added: "Today",
-    progress: 0.43,
-    page: 84,
+const makeVolumes = (
+  seriesId: string,
+  seriesTitle: string,
+  count: number,
+  palette: string[],
+): Book[] =>
+  Array.from({ length: count }, (_, index) => ({
+    id: seriesId + "-" + String(index + 1).padStart(2, "0"),
+    title: seriesTitle,
+    volume: index + 1,
+    added: index < 2 ? "Today" : index < 4 ? "Yesterday" : "Earlier",
+    progress: index === 2 ? 0.43 : index === 1 ? 0.68 : undefined,
+    page: index === 2 ? 84 : index === 1 ? 132 : undefined,
     pages: 196,
-    accent: "linear-gradient(145deg, #efe7d6 0%, #c7a27f 52%, #745744 100%)",
-  },
-  {
-    id: "blue-hour-02",
-    title: "Blue Hour",
-    author: "Volume 02",
-    folder: "Manga / Blue Hour",
-    added: "Today",
-    progress: 0.68,
-    page: 132,
-    pages: 194,
-    accent: "linear-gradient(145deg, #d5e2e9 0%, #7896aa 50%, #40596d 100%)",
-  },
-  {
-    id: "small-rooms-03",
-    title: "Small Rooms",
-    author: "Volume 03",
-    folder: "Manga / Small Rooms",
-    added: "Yesterday",
-    progress: 0.17,
-    page: 34,
-    pages: 201,
-    accent: "linear-gradient(145deg, #ead8d4 0%, #a87872 50%, #65433f 100%)",
-  },
+    accent: palette[index % palette.length],
+  }));
+
+const quietCity = makeVolumes("quiet-city", "Quiet City", 10, [
+  "linear-gradient(145deg, #efe7d6, #9c7757)",
+  "linear-gradient(145deg, #e5d3c5, #8d6552)",
+  "linear-gradient(145deg, #dedbc9, #77745a)",
+]);
+
+const blueHour = makeVolumes("blue-hour", "Blue Hour", 6, [
+  "linear-gradient(145deg, #d5e2e9, #58748a)",
+  "linear-gradient(145deg, #cadbe6, #4d6578)",
+  "linear-gradient(145deg, #d1d7e2, #626a7d)",
+]);
+
+const paperMoon = makeVolumes("paper-moon", "Paper Moon", 4, [
+  "linear-gradient(145deg, #eee0c6, #b28a53)",
+  "linear-gradient(145deg, #e5d3ae, #9b7444)",
+  "linear-gradient(145deg, #ead9bd, #806548)",
+]);
+
+export const standaloneBooks: Book[] = [
   {
     id: "field-notes",
     title: "Field Notes",
-    author: "Collected Edition",
-    folder: "Books / Essays",
-    added: "Yesterday",
-    accent: "linear-gradient(145deg, #e4e6d2 0%, #899169 52%, #535b3d 100%)",
-  },
-  {
-    id: "after-rain",
-    title: "After Rain",
-    author: "Volume 01",
-    folder: "Manga / After Rain",
-    added: "3 days ago",
-    accent: "linear-gradient(145deg, #dddde5 0%, #858197 50%, #4f4b5d 100%)",
+    label: "Collected Edition",
+    added: "Today",
+    accent: "linear-gradient(145deg, #e4e6d2, #899169)",
   },
   {
     id: "north-window",
     title: "North Window",
-    author: "Novel",
-    folder: "Books / Novels",
-    added: "4 days ago",
-    accent: "linear-gradient(145deg, #d9e0dc 0%, #718579 50%, #415046 100%)",
-  },
-  {
-    id: "paper-moon",
-    title: "Paper Moon",
-    author: "Volume 04",
-    folder: "Manga / Paper Moon",
-    added: "5 days ago",
-    accent: "linear-gradient(145deg, #eee0c6 0%, #b28a53 50%, #6f542f 100%)",
+    label: "Novel",
+    added: "Yesterday",
+    accent: "linear-gradient(145deg, #d9e0dc, #718579)",
   },
   {
     id: "camera-notes",
     title: "Camera Notes",
-    author: "Reference PDF",
-    folder: "PDF / Manuals",
-    added: "1 week ago",
-    accent: "linear-gradient(145deg, #dfdfdb 0%, #8d8c83 52%, #55554f 100%)",
+    label: "Reference",
+    added: "Earlier",
+    accent: "linear-gradient(145deg, #dfdfdb, #8d8c83)",
   },
 ];
 
-export const continueBooks = books.filter((book) => book.progress !== undefined).slice(0, 3);
+export const books: Book[] = [...quietCity, ...blueHour, ...paperMoon, ...standaloneBooks];
 
-export const folders: BookFolder[] = [
-  {
-    id: "manga",
-    title: "Manga",
-    subtitle: "5 series",
-    bookIds: ["quiet-city-01", "blue-hour-02", "small-rooms-03", "after-rain", "paper-moon"],
-  },
-  {
-    id: "books",
-    title: "Books",
-    subtitle: "Essays & novels",
-    bookIds: ["field-notes", "north-window"],
-  },
-  {
-    id: "pdf",
-    title: "PDF",
-    subtitle: "Manuals & reference",
-    bookIds: ["camera-notes"],
-  },
+export const series: Series[] = [
+  { id: "quiet-city", title: "Quiet City", volumeIds: quietCity.map((book) => book.id) },
+  { id: "blue-hour", title: "Blue Hour", volumeIds: blueHour.map((book) => book.id) },
+  { id: "paper-moon", title: "Paper Moon", volumeIds: paperMoon.map((book) => book.id) },
 ];
+
+export const continueBooks = [quietCity[2], blueHour[1], standaloneBooks[0]];
+
+export const newOnShelf = [quietCity[9], blueHour[5], paperMoon[3], standaloneBooks[0]];

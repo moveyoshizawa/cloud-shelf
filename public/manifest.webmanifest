@@ -1,7 +1,7 @@
 {
-  "name": "Cloud Shelf",
-  "short_name": "Shelf",
-  "description": "A beautifully simple frontend for your files.",
+  "name": "Cloud Shelf Books",
+  "short_name": "Books",
+  "description": "A quiet, content-first shelf for your books.",
   "start_url": "/cloud-shelf/",
   "scope": "/cloud-shelf/",
   "display": "standalone",

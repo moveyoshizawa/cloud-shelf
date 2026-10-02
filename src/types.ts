@@ -1,8 +1,8 @@
 export interface Book {
   id: string;
   title: string;
-  author?: string;
-  folder: string;
+  volume?: number;
+  label?: string;
   added: string;
   progress?: number;
   page?: number;
@@ -10,9 +10,8 @@ export interface Book {
   accent: string;
 }
 
-export interface BookFolder {
+export interface Series {
   id: string;
   title: string;
-  subtitle: string;
-  bookIds: string[];
+  volumeIds: string[];
 }
