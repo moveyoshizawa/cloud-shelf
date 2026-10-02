@@ -1,0 +1,18 @@
+{
+  "name": "Cloud Shelf",
+  "short_name": "Shelf",
+  "description": "A beautifully simple frontend for your files.",
+  "start_url": "/cloud-shelf/",
+  "scope": "/cloud-shelf/",
+  "display": "standalone",
+  "background_color": "#f5f5f2",
+  "theme_color": "#f5f5f2",
+  "icons": [
+    {
+      "src": "/cloud-shelf/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
