@@ -218,22 +218,24 @@ button { color: inherit; }
 
 .binding-edge {
   position: absolute;
-  top: 5%;
-  bottom: 5%;
-  width: 4px;
+  top: 4%;
+  bottom: 4%;
+  width: 7px;
   z-index: 4;
-  opacity: .55;
+  opacity: .68;
   pointer-events: none;
 }
 
 .binding-edge--rtl {
   right: 0;
-  background: linear-gradient(90deg, transparent, rgba(20,20,20,.10), rgba(255,255,255,.10));
+  border-right: 1px solid rgba(24,23,21,.18);
+  background: linear-gradient(90deg, transparent 0%, rgba(24,23,21,.04) 45%, rgba(24,23,21,.12) 100%);
 }
 
 .binding-edge--ltr {
   left: 0;
-  background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(20,20,20,.10), transparent);
+  border-left: 1px solid rgba(24,23,21,.18);
+  background: linear-gradient(90deg, rgba(24,23,21,.12) 0%, rgba(24,23,21,.04) 55%, transparent 100%);
 }
 
 .book-art--fallback {
@@ -603,7 +605,7 @@ button { color: inherit; }
   transform: scale(.985);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 600px), (max-height: 600px) and (pointer: coarse) {
   .app-shell {
     --shelf-gap: var(--space-4);
     --book-card-width: calc((100% - var(--shelf-gap)) / 2);

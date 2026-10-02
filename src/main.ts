@@ -21,6 +21,8 @@ let showVolume = localStorage.getItem("cloud-shelf-books:show-volume") !== "fals
 let showYear = localStorage.getItem("cloud-shelf-books:show-year") === "true";
 let labelMode = (localStorage.getItem("cloud-shelf-books:labels") as LabelMode | null) ?? "off";
 
+const CONTINUE_LIMIT = 6;
+
 function route(): Route {
   const hash = location.hash.replace(/^#\/?/, "");
   if (!hash) return { name: "home" };
@@ -300,7 +302,7 @@ function homePage(): string {
       menuMarkup() +
       '<section class="continue-section" aria-label="Continue reading">' +
         '<div class="continue-track">' +
-          continueBooks.map((book) => {
+          continueBooks.slice(0, CONTINUE_LIMIT).map((book) => {
             const itemSeries = series.find((entry) => entry.volumeIds.includes(book.id));
             return (
               '<button class="cover-button" type="button" data-reader="' + book.id + '" aria-label="Continue ' + book.title + '">' +
