@@ -19,6 +19,8 @@ const makeVolumes = (
     page: index === 2 ? 84 : index === 1 ? 132 : undefined,
     pages: 196,
     accent: palette[index % palette.length],
+    binding: "rtl",
+    hasCover: true,
   }));
 
 const quietCity = makeVolumes("quiet-city", "Quiet City", "A. Mori", 2022, 10, [
@@ -51,6 +53,8 @@ export const standaloneBooks: Book[] = [
     page: 41,
     pages: 172,
     accent: "linear-gradient(145deg, #e4e6d2, #899169)",
+    binding: "ltr",
+    hasCover: true,
   },
   {
     id: "north-window",
@@ -60,6 +64,8 @@ export const standaloneBooks: Book[] = [
     year: 2021,
     added: "Yesterday",
     accent: "linear-gradient(145deg, #d9e0dc, #718579)",
+    binding: "ltr",
+    hasCover: true,
   },
   {
     id: "camera-notes",
@@ -68,7 +74,9 @@ export const standaloneBooks: Book[] = [
     label: "Reference",
     year: 2026,
     added: "Earlier",
-    accent: "linear-gradient(145deg, #dfdfdb, #8d8c83)",
+    accent: "linear-gradient(145deg, #d9d7cf, #89877e)",
+    binding: "ltr",
+    hasCover: false,
   },
 ];
 

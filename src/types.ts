@@ -1,3 +1,5 @@
+export type BindingDirection = "rtl" | "ltr";
+
 export interface Book {
   id: string;
   title: string;
@@ -10,6 +12,8 @@ export interface Book {
   page?: number;
   pages?: number;
   accent: string;
+  binding: BindingDirection;
+  hasCover: boolean;
 }
 
 export interface Series {

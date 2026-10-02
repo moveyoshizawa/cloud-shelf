@@ -8,6 +8,7 @@ type Route =
   | { name: "reader"; id: string };
 
 type SortMode = "title" | "author" | "added";
+type LabelMode = "off" | "title" | "full";
 
 type LibraryEntry =
   | { type: "series"; id: string; title: string; author: string; series: Series; displayBook: Book }
@@ -18,6 +19,7 @@ let sortMode: SortMode = "title";
 let menuOpen = false;
 let showVolume = localStorage.getItem("cloud-shelf-books:show-volume") !== "false";
 let showYear = localStorage.getItem("cloud-shelf-books:show-year") === "true";
+let labelMode = (localStorage.getItem("cloud-shelf-books:labels") as LabelMode | null) ?? "off";
 
 function route(): Route {
   const hash = location.hash.replace(/^#\/?/, "");
@@ -76,17 +78,50 @@ function progressMarkup(book: Book): string {
   );
 }
 
+function bindingMarkup(book: Book): string {
+  return '<span class="binding-edge binding-edge--' + book.binding + '" aria-hidden="true"></span>';
+}
+
+function fallbackTitleMarkup(book: Book): string {
+  if (book.hasCover) return "";
+
+  return (
+    '<span class="fallback-cover-copy">' +
+      '<strong>' + book.title + '</strong>' +
+      (book.volume ? '<span>' + String(book.volume).padStart(2, "0") + '</span>' : '') +
+    '</span>'
+  );
+}
+
+function labelMarkup(book: Book): string {
+  if (labelMode === "off") return "";
+
+  return (
+    '<span class="book-labels">' +
+      '<span class="book-title">' + titleLine(book) + '</span>' +
+      (labelMode === "full" ? '<span class="book-author">' + book.author + '</span>' : '') +
+    '</span>'
+  );
+}
+
+function coverArtMarkup(book: Book, totalVolumes?: number): string {
+  return (
+    '<span class="book-art' + (book.hasCover ? '' : ' book-art--fallback') + '" style="--cover-accent: ' + book.accent + '">' +
+      '<span class="cover-shape cover-shape--one" aria-hidden="true"></span>' +
+      '<span class="cover-shape cover-shape--two" aria-hidden="true"></span>' +
+      bindingMarkup(book) +
+      fallbackTitleMarkup(book) +
+      coverInfo(book, totalVolumes) +
+      progressMarkup(book) +
+    '</span>'
+  );
+}
+
 function cover(book: Book, variant: "continue" | "grid" = "grid", totalVolumes?: number): string {
   return (
     '<span class="book-cover book-cover--' + variant + '">' +
-      '<span class="book-art" style="--cover-accent: ' + book.accent + '">' +
-        '<span class="cover-shape cover-shape--one" aria-hidden="true"></span>' +
-        '<span class="cover-shape cover-shape--two" aria-hidden="true"></span>' +
-        coverInfo(book, totalVolumes) +
-        progressMarkup(book) +
-      '</span>' +
-      '<span class="book-title">' + titleLine(book) + '</span>' +
-      '<span class="book-author">' + book.author + '</span>' +
+      coverArtMarkup(book, totalVolumes) +
+      labelMarkup(book) +
     '</span>'
   );
 }
@@ -104,6 +139,7 @@ function seriesCover(item: Series): string {
       '<span class="series-back series-back--' + (index + 1) + '" style="--cover-accent: ' + book.accent + '">' +
         '<span class="cover-shape cover-shape--one" aria-hidden="true"></span>' +
         '<span class="cover-shape cover-shape--two" aria-hidden="true"></span>' +
+        bindingMarkup(book) +
       '</span>'
     )
     .join("");
@@ -112,15 +148,11 @@ function seriesCover(item: Series): string {
     '<span class="stacked-book">' +
       '<span class="stack-art-wrap">' +
         backs +
-        '<span class="book-art stack-front" style="--cover-accent: ' + front.accent + '">' +
-          '<span class="cover-shape cover-shape--one" aria-hidden="true"></span>' +
-          '<span class="cover-shape cover-shape--two" aria-hidden="true"></span>' +
-          coverInfo(front, item.volumeIds.length) +
-          progressMarkup(front) +
+        '<span class="stack-front">' +
+          coverArtMarkup(front, item.volumeIds.length) +
         '</span>' +
       '</span>' +
-      '<span class="book-title">' + titleLine(front) + '</span>' +
-      '<span class="book-author">' + front.author + '</span>' +
+      labelMarkup(front) +
     '</span>'
   );
 }
@@ -214,12 +246,23 @@ function menuMarkup(): string {
       '<span class="menu-check" aria-hidden="true">' + (checked ? "✓" : "") + '</span>' +
     '</button>';
 
+  const labelOption = (mode: LabelMode, label: string) =>
+    '<button class="menu-row" type="button" data-label-mode="' + mode + '">' +
+      '<span>' + label + '</span>' +
+      '<span class="menu-check" aria-hidden="true">' + (labelMode === mode ? "✓" : "") + '</span>' +
+    '</button>';
+
   return (
     '<div class="options-popover" id="options-popover">' +
       '<div class="menu-label">Sort by</div>' +
       sortOption("title", "Title") +
       sortOption("author", "Author") +
       sortOption("added", "Recently Added") +
+      '<div class="menu-separator"></div>' +
+      '<div class="menu-label">Labels</div>' +
+      labelOption("off", "Off") +
+      labelOption("title", "Title") +
+      labelOption("full", "Title & Author") +
       '<div class="menu-separator"></div>' +
       '<div class="menu-label">Cover Info</div>' +
       toggleOption("volume", "Volume Number", showVolume) +
@@ -294,9 +337,7 @@ function seriesPage(id: string): string {
   return (
     '<main class="app-shell">' +
       backHeader() +
-      '<div class="page-heading">' +
-        '<h1>' + item.title + '</h1>' +
-      '</div>' +
+      '<div class="page-heading"><h1>' + item.title + '</h1></div>' +
       '<div class="book-grid">' +
         volumes.map((book) =>
           '<button class="cover-button" type="button" data-reader="' + book.id + '" aria-label="Open ' + titleLine(book) + '">' +
@@ -386,6 +427,18 @@ function wireInteractions(): void {
     button.addEventListener("click", () => {
       const mode = button.dataset.sort as SortMode | undefined;
       if (mode) sortMode = mode;
+      menuOpen = false;
+      render();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-label-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const mode = button.dataset.labelMode as LabelMode | undefined;
+      if (mode) {
+        labelMode = mode;
+        localStorage.setItem("cloud-shelf-books:labels", mode);
+      }
       menuOpen = false;
       render();
     });
