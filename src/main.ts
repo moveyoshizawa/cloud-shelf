@@ -7,16 +7,17 @@ type Route =
   | { name: "series"; id: string }
   | { name: "reader"; id: string };
 
-type SortMode = "title" | "added" | "progress";
+type SortMode = "title" | "author" | "added";
 
 type LibraryEntry =
-  | { type: "series"; id: string; title: string; series: Series; displayBook: Book }
-  | { type: "book"; id: string; title: string; book: Book; displayBook: Book };
+  | { type: "series"; id: string; title: string; author: string; series: Series; displayBook: Book }
+  | { type: "book"; id: string; title: string; author: string; book: Book; displayBook: Book };
 
 let searchQuery = "";
 let sortMode: SortMode = "title";
-let sortOpen = false;
-let searchOpen = false;
+let menuOpen = false;
+let showVolume = localStorage.getItem("cloud-shelf-books:show-volume") !== "false";
+let showYear = localStorage.getItem("cloud-shelf-books:show-year") === "true";
 
 function route(): Route {
   const hash = location.hash.replace(/^#\/?/, "");
@@ -32,11 +33,6 @@ function navigate(path: string): void {
   location.hash = path;
 }
 
-function bookLabel(book: Book): string {
-  if (book.volume) return "Vol. " + book.volume;
-  return book.label ?? "";
-}
-
 function activeVolume(item: Series): Book {
   const volumes = item.volumeIds
     .map((id) => books.find((book) => book.id === id))
@@ -49,20 +45,48 @@ function activeVolume(item: Series): Book {
   return inProgress[0] ?? volumes[0];
 }
 
-function cover(book: Book, variant: "continue" | "grid" = "grid"): string {
-  const progress = book.progress !== undefined
-    ? '<span class="cover-progress" aria-hidden="true"><span style="--progress: ' + Math.round(book.progress * 100) + '%"></span></span>'
-    : "";
+function titleLine(book: Book): string {
+  return book.volume ? book.title + " (" + book.volume + ")" : book.title;
+}
 
+function coverInfo(book: Book, totalVolumes?: number): string {
+  const badges: string[] = [];
+
+  if (showYear && book.year) {
+    badges.push('<span class="cover-year">' + book.year + '</span>');
+  }
+
+  if (showVolume && book.volume && totalVolumes) {
+    const current = String(book.volume).padStart(2, "0");
+    const total = String(totalVolumes).padStart(2, "0");
+    badges.push('<span class="cover-volume">' + current + "/" + total + '</span>');
+  }
+
+  if (!badges.length) return "";
+  return '<span class="cover-info" aria-hidden="true">' + badges.join("") + '</span>';
+}
+
+function progressMarkup(book: Book): string {
+  if (book.progress === undefined) return "";
+
+  return (
+    '<span class="cover-progress" aria-hidden="true">' +
+      '<span style="--progress: ' + Math.round(book.progress * 100) + '%"></span>' +
+    '</span>'
+  );
+}
+
+function cover(book: Book, variant: "continue" | "grid" = "grid", totalVolumes?: number): string {
   return (
     '<span class="book-cover book-cover--' + variant + '">' +
       '<span class="book-art" style="--cover-accent: ' + book.accent + '">' +
-        '<span class="book-monogram" aria-hidden="true">' + book.title.slice(0, 1) + '</span>' +
-        (book.volume ? '<span class="volume-mark" aria-hidden="true">' + book.volume + '</span>' : '') +
-        progress +
+        '<span class="cover-shape cover-shape--one" aria-hidden="true"></span>' +
+        '<span class="cover-shape cover-shape--two" aria-hidden="true"></span>' +
+        coverInfo(book, totalVolumes) +
+        progressMarkup(book) +
       '</span>' +
-      '<span class="book-title">' + book.title + '</span>' +
-      '<span class="book-meta">' + bookLabel(book) + '</span>' +
+      '<span class="book-title">' + titleLine(book) + '</span>' +
+      '<span class="book-author">' + book.author + '</span>' +
     '</span>'
   );
 }
@@ -77,58 +101,52 @@ function seriesCover(item: Series): string {
 
   const backs = others
     .map((book, index) =>
-      '<span class="series-back series-back--' + (index + 1) + '" style="--cover-accent: ' + book.accent + '"></span>'
+      '<span class="series-back series-back--' + (index + 1) + '" style="--cover-accent: ' + book.accent + '">' +
+        '<span class="cover-shape cover-shape--one" aria-hidden="true"></span>' +
+        '<span class="cover-shape cover-shape--two" aria-hidden="true"></span>' +
+      '</span>'
     )
     .join("");
-
-  const progress = front.progress !== undefined
-    ? '<span class="cover-progress" aria-hidden="true"><span style="--progress: ' + Math.round(front.progress * 100) + '%"></span></span>'
-    : "";
 
   return (
     '<span class="stacked-book">' +
       '<span class="stack-art-wrap">' +
         backs +
         '<span class="book-art stack-front" style="--cover-accent: ' + front.accent + '">' +
-          '<span class="book-monogram" aria-hidden="true">' + front.title.slice(0, 1) + '</span>' +
-          (front.volume ? '<span class="volume-mark" aria-hidden="true">' + front.volume + '</span>' : '') +
-          progress +
+          '<span class="cover-shape cover-shape--one" aria-hidden="true"></span>' +
+          '<span class="cover-shape cover-shape--two" aria-hidden="true"></span>' +
+          coverInfo(front, item.volumeIds.length) +
+          progressMarkup(front) +
         '</span>' +
       '</span>' +
-      '<span class="book-title">' + item.title + '</span>' +
-      '<span class="book-meta">' + item.volumeIds.length + ' volumes</span>' +
+      '<span class="book-title">' + titleLine(front) + '</span>' +
+      '<span class="book-author">' + front.author + '</span>' +
     '</span>'
   );
 }
 
-function header(): string {
-  if (searchOpen) {
-    return (
-      '<header class="search-topbar">' +
-        '<div class="inline-search">' +
-          '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-            '<circle cx="11" cy="11" r="6.5"></circle>' +
-            '<path d="m16 16 4 4"></path>' +
-          '</svg>' +
-          '<input id="inline-search-input" type="search" inputmode="search" placeholder="Search books" value="' + searchQuery.replace(/"/g, "&quot;") + '" aria-label="Search books" />' +
-        '</div>' +
-        '<button class="cancel-search" id="close-search" type="button">Cancel</button>' +
-      '</header>'
-    );
-  }
-
+function searchField(): string {
   return (
-    '<header class="topbar">' +
-      '<div><div class="eyebrow">Cloud Shelf</div><h1 class="brand">Books</h1></div>' +
-      '<div class="top-actions">' +
-        '<button class="icon-button" id="open-search" type="button" aria-label="Search books">' +
-          '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-            '<circle cx="11" cy="11" r="6.5"></circle>' +
-            '<path d="m16 16 4 4"></path>' +
-          '</svg>' +
-        '</button>' +
-        '<button class="icon-button more-button" id="open-sort" type="button" aria-label="Sort books">•••</button>' +
+    '<label class="search-field" aria-label="Search books">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<circle cx="11" cy="11" r="6.5"></circle>' +
+        '<path d="m16 16 4 4"></path>' +
+      '</svg>' +
+      '<input id="search-input" type="search" inputmode="search" placeholder="" value="' +
+        searchQuery.replace(/"/g, "&quot;") +
+      '" aria-label="Search books" />' +
+    '</label>'
+  );
+}
+
+function header(): string {
+  return (
+    '<header class="home-header">' +
+      '<div class="brand-row">' +
+        '<div><div class="eyebrow">Cloud Shelf</div><h1 class="brand">Books</h1></div>' +
+        '<button class="icon-button more-button" id="open-menu" type="button" aria-label="Library options">•••</button>' +
       '</div>' +
+      searchField() +
     '</header>'
   );
 }
@@ -136,19 +154,24 @@ function header(): string {
 function libraryEntries(): LibraryEntry[] {
   const groupedIds = new Set(series.flatMap((item) => item.volumeIds));
   const entries: LibraryEntry[] = [
-    ...series.map((item) => ({
-      type: "series" as const,
-      id: item.id,
-      title: item.title,
-      series: item,
-      displayBook: activeVolume(item),
-    })),
+    ...series.map((item) => {
+      const displayBook = activeVolume(item);
+      return {
+        type: "series" as const,
+        id: item.id,
+        title: item.title,
+        author: displayBook.author,
+        series: item,
+        displayBook,
+      };
+    }),
     ...standaloneBooks
       .filter((book) => !groupedIds.has(book.id))
       .map((book) => ({
         type: "book" as const,
         id: book.id,
         title: book.title,
+        author: book.author,
         book,
         displayBook: book,
       })),
@@ -157,20 +180,18 @@ function libraryEntries(): LibraryEntry[] {
   const query = searchQuery.trim().toLocaleLowerCase();
   const filtered = query
     ? entries.filter((entry) => {
-        const extra = entry.type === "series"
-          ? entry.series.volumeIds.length + " volumes vol " + (entry.displayBook.volume ?? "")
-          : bookLabel(entry.book);
-        return (entry.title + " " + extra).toLocaleLowerCase().includes(query);
+        const volumeText = entry.displayBook.volume ? " " + entry.displayBook.volume : "";
+        return (entry.title + " " + entry.author + volumeText).toLocaleLowerCase().includes(query);
       })
     : entries;
 
   return filtered.sort((a, b) => {
-    if (sortMode === "title") return a.title.localeCompare(b.title);
+    if (sortMode === "title") {
+      return a.title.localeCompare(b.title) || a.author.localeCompare(b.author);
+    }
 
-    if (sortMode === "progress") {
-      const aProgress = a.displayBook.progress ?? -1;
-      const bProgress = b.displayBook.progress ?? -1;
-      return bProgress - aProgress || a.title.localeCompare(b.title);
+    if (sortMode === "author") {
+      return a.author.localeCompare(b.author) || a.title.localeCompare(b.title);
     }
 
     const rank = (value: string): number => value === "Today" ? 0 : value === "Yesterday" ? 1 : 2;
@@ -178,52 +199,77 @@ function libraryEntries(): LibraryEntry[] {
   });
 }
 
-function sortMenu(): string {
-  if (!sortOpen) return "";
+function menuMarkup(): string {
+  if (!menuOpen) return "";
 
-  const option = (mode: SortMode, label: string) =>
-    '<button class="sort-option' + (sortMode === mode ? ' sort-option--active' : '') + '" type="button" data-sort="' + mode + '">' +
+  const sortOption = (mode: SortMode, label: string) =>
+    '<button class="menu-row" type="button" data-sort="' + mode + '">' +
       '<span>' + label + '</span>' +
-      '<span class="sort-check" aria-hidden="true">' + (sortMode === mode ? "✓" : "") + '</span>' +
+      '<span class="menu-check" aria-hidden="true">' + (sortMode === mode ? "✓" : "") + '</span>' +
+    '</button>';
+
+  const toggleOption = (setting: "volume" | "year", label: string, checked: boolean) =>
+    '<button class="menu-row" type="button" data-setting="' + setting + '">' +
+      '<span>' + label + '</span>' +
+      '<span class="menu-check" aria-hidden="true">' + (checked ? "✓" : "") + '</span>' +
     '</button>';
 
   return (
-    '<div class="sort-popover" id="sort-popover">' +
-      option("title", "Title") +
-      option("added", "Recently Added") +
-      option("progress", "Reading Progress") +
+    '<div class="options-popover" id="options-popover">' +
+      '<div class="menu-label">Sort by</div>' +
+      sortOption("title", "Title") +
+      sortOption("author", "Author") +
+      sortOption("added", "Recently Added") +
+      '<div class="menu-separator"></div>' +
+      '<div class="menu-label">Cover Info</div>' +
+      toggleOption("volume", "Volume Number", showVolume) +
+      toggleOption("year", "Publication Year", showYear) +
+    '</div>'
+  );
+}
+
+function libraryMarkup(): string {
+  const entries = libraryEntries();
+
+  if (!entries.length) {
+    return '<div class="empty-state">No books found</div>';
+  }
+
+  return (
+    '<div class="library-grid">' +
+      entries.map((entry) =>
+        entry.type === "series"
+          ? '<button class="cover-button" type="button" data-nav="series/' + entry.id + '" aria-label="Open ' + entry.title + '">' +
+              seriesCover(entry.series) +
+            '</button>'
+          : '<button class="cover-button" type="button" data-reader="' + entry.id + '" aria-label="Open ' + entry.title + '">' +
+              cover(entry.book) +
+            '</button>'
+      ).join("") +
     '</div>'
   );
 }
 
 function homePage(): string {
-  const entries = libraryEntries();
-
   return (
     '<main class="app-shell">' +
       header() +
-      sortMenu() +
-      '<section class="section">' +
-        '<h2 class="section-title">Continue Reading</h2>' +
+      menuMarkup() +
+      '<section class="continue-section" aria-label="Continue reading">' +
         '<div class="continue-track">' +
-          continueBooks.map((book) =>
-            '<button class="cover-button" type="button" data-reader="' + book.id + '">' +
-              cover(book, "continue") +
-            '</button>'
-          ).join("") +
+          continueBooks.map((book) => {
+            const itemSeries = series.find((entry) => entry.volumeIds.includes(book.id));
+            return (
+              '<button class="cover-button" type="button" data-reader="' + book.id + '" aria-label="Continue ' + book.title + '">' +
+                cover(book, "continue", itemSeries?.volumeIds.length) +
+              '</button>'
+            );
+          }).join("") +
         '</div>' +
       '</section>' +
-      '<section class="section">' +
+      '<section class="library-section">' +
         '<h2 class="section-title">Library</h2>' +
-        (entries.length
-          ? '<div class="library-grid">' +
-              entries.map((entry) =>
-                entry.type === "series"
-                  ? '<button class="cover-button" type="button" data-nav="series/' + entry.id + '">' + seriesCover(entry.series) + '</button>'
-                  : '<button class="cover-button" type="button" data-reader="' + entry.id + '">' + cover(entry.book) + '</button>'
-              ).join("") +
-            '</div>'
-          : '<div class="empty-state">No books found</div>') +
+        '<div id="library-content">' + libraryMarkup() + '</div>' +
       '</section>' +
     '</main>'
   );
@@ -233,14 +279,6 @@ function backHeader(): string {
   return (
     '<header class="topbar">' +
       '<button class="back-button" type="button" data-back><span aria-hidden="true">‹</span> Books</button>' +
-      '<div class="top-actions">' +
-        '<button class="icon-button" id="open-search" type="button" aria-label="Search books">' +
-          '<svg viewBox="0 0 24 24" aria-hidden="true">' +
-            '<circle cx="11" cy="11" r="6.5"></circle>' +
-            '<path d="m16 16 4 4"></path>' +
-          '</svg>' +
-        '</button>' +
-      '</div>' +
     '</header>'
   );
 }
@@ -258,12 +296,11 @@ function seriesPage(id: string): string {
       backHeader() +
       '<div class="page-heading">' +
         '<h1>' + item.title + '</h1>' +
-        '<span>' + volumes.length + ' volumes</span>' +
       '</div>' +
       '<div class="book-grid">' +
         volumes.map((book) =>
-          '<button class="cover-button" type="button" data-reader="' + book.id + '">' +
-            cover(book) +
+          '<button class="cover-button" type="button" data-reader="' + book.id + '" aria-label="Open ' + titleLine(book) + '">' +
+            cover(book, "grid", volumes.length) +
           '</button>'
         ).join("") +
       '</div>' +
@@ -283,13 +320,13 @@ function readerPage(id: string): string {
     '<main class="reader-shell">' +
       '<header class="reader-topbar">' +
         '<button class="reader-back" type="button" data-back aria-label="Back"><span aria-hidden="true">‹</span></button>' +
-        '<div class="reader-title"><strong>' + book.title + '</strong><span>' + bookLabel(book) + '</span></div>' +
+        '<div class="reader-title"><strong>' + titleLine(book) + '</strong><span>' + book.author + '</span></div>' +
         '<button class="reader-more" type="button" aria-label="More options">•••</button>' +
       '</header>' +
       '<div class="reader-stage">' +
         '<div class="reader-page" style="--page-accent: ' + book.accent + '">' +
-          '<span class="reader-page-number">' + page + '</span>' +
-          '<span class="reader-page-mark" aria-hidden="true">' + book.title.slice(0, 1) + '</span>' +
+          '<span class="reader-page-shape reader-page-shape--one" aria-hidden="true"></span>' +
+          '<span class="reader-page-shape reader-page-shape--two" aria-hidden="true"></span>' +
         '</div>' +
       '</div>' +
       '<footer class="reader-footer">' +
@@ -309,48 +346,39 @@ function render(): void {
 
   document.querySelector<HTMLDivElement>("#app")!.innerHTML = markup;
   wireInteractions();
-
-  if (searchOpen) {
-    const input = document.querySelector<HTMLInputElement>("#inline-search-input");
-    if (input) {
-      input.focus();
-      input.setSelectionRange(input.value.length, input.value.length);
-    }
-  }
 }
 
-function wireInteractions(): void {
-  document.querySelectorAll<HTMLElement>("[data-nav]").forEach((element) => {
+function refreshLibrary(): void {
+  const library = document.querySelector<HTMLDivElement>("#library-content");
+  if (!library) return;
+  library.innerHTML = libraryMarkup();
+  wireEntryLinks(library);
+}
+
+function wireEntryLinks(root: ParentNode = document): void {
+  root.querySelectorAll<HTMLElement>("[data-nav]").forEach((element) => {
     element.addEventListener("click", () => navigate(element.dataset.nav ?? ""));
   });
 
-  document.querySelectorAll<HTMLElement>("[data-reader]").forEach((element) => {
+  root.querySelectorAll<HTMLElement>("[data-reader]").forEach((element) => {
     element.addEventListener("click", () => navigate("reader/" + element.dataset.reader));
   });
+}
+
+function wireInteractions(): void {
+  wireEntryLinks();
 
   document.querySelectorAll<HTMLElement>("[data-back]").forEach((element) => {
     element.addEventListener("click", () => history.back());
   });
 
-  document.querySelector<HTMLButtonElement>("#open-search")?.addEventListener("click", () => {
-    searchOpen = true;
-    sortOpen = false;
-    render();
-  });
-
-  document.querySelector<HTMLButtonElement>("#close-search")?.addEventListener("click", () => {
-    searchOpen = false;
-    searchQuery = "";
-    render();
-  });
-
-  document.querySelector<HTMLInputElement>("#inline-search-input")?.addEventListener("input", (event) => {
+  document.querySelector<HTMLInputElement>("#search-input")?.addEventListener("input", (event) => {
     searchQuery = (event.currentTarget as HTMLInputElement).value;
-    render();
+    refreshLibrary();
   });
 
-  document.querySelector<HTMLButtonElement>("#open-sort")?.addEventListener("click", () => {
-    sortOpen = !sortOpen;
+  document.querySelector<HTMLButtonElement>("#open-menu")?.addEventListener("click", () => {
+    menuOpen = !menuOpen;
     render();
   });
 
@@ -358,16 +386,30 @@ function wireInteractions(): void {
     button.addEventListener("click", () => {
       const mode = button.dataset.sort as SortMode | undefined;
       if (mode) sortMode = mode;
-      sortOpen = false;
+      menuOpen = false;
+      render();
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-setting]").forEach((button) => {
+    button.addEventListener("click", () => {
+      if (button.dataset.setting === "volume") {
+        showVolume = !showVolume;
+        localStorage.setItem("cloud-shelf-books:show-volume", String(showVolume));
+      }
+
+      if (button.dataset.setting === "year") {
+        showYear = !showYear;
+        localStorage.setItem("cloud-shelf-books:show-year", String(showYear));
+      }
+
       render();
     });
   });
 }
 
 window.addEventListener("hashchange", () => {
-  searchOpen = false;
-  sortOpen = false;
-  searchQuery = "";
+  menuOpen = false;
   render();
 });
 
