@@ -187,7 +187,22 @@ button { color: inherit; }
 .book-art {
   width: 100%;
   aspect-ratio: 2 / 3;
-  box-shadow: 0 13px 30px rgba(25,24,21,.11);
+  box-shadow:
+    1px 1px 0 rgba(255,255,255,.46),
+    2px 2px 0 rgba(72,70,64,.10),
+    0 13px 30px rgba(25,24,21,.11);
+}
+
+.book-art::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset -2px 0 0 rgba(255,255,255,.14),
+    inset 0 -2px 0 rgba(38,37,34,.08);
+  pointer-events: none;
+  z-index: 5;
 }
 
 .cover-shape {
@@ -247,7 +262,7 @@ button { color: inherit; }
 
 .cover-volume {
   position: absolute;
-  left: 9px;
+  right: 9px;
   bottom: 9px;
   margin: 0;
 }
@@ -321,21 +336,23 @@ button { color: inherit; }
 }
 
 .series-back {
-  box-shadow: 0 10px 24px rgba(25,24,21,.08);
+  box-shadow:
+    1px 1px 0 rgba(255,255,255,.34),
+    0 8px 18px rgba(25,24,21,.07);
 }
 
 .series-back--1 {
-  transform: translate(4px, 3px);
+  transform: translate(3px, 4px);
   z-index: 3;
 }
 
 .series-back--2 {
-  transform: translate(7px, 6px);
+  transform: translate(5px, 8px);
   z-index: 2;
 }
 
 .series-back--3 {
-  transform: translate(10px, 9px);
+  transform: translate(7px, 12px);
   z-index: 1;
 }
 
@@ -593,9 +610,17 @@ button { color: inherit; }
 }
 
 @media (prefers-color-scheme: dark) {
-  .book-art,
+  .book-art {
+    box-shadow:
+      1px 1px 0 rgba(255,255,255,.16),
+      2px 2px 0 rgba(0,0,0,.28),
+      0 13px 34px rgba(0,0,0,.24);
+  }
+
   .series-back {
-    box-shadow: 0 13px 34px rgba(0,0,0,.24);
+    box-shadow:
+      1px 1px 0 rgba(255,255,255,.10),
+      0 10px 26px rgba(0,0,0,.20);
   }
 
   .reader-page {
