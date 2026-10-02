@@ -279,7 +279,6 @@ button { color: inherit; }
   pointer-events: none;
 }
 
-.cover-year,
 .cover-volume {
   display: inline-flex;
   align-items: center;
@@ -294,12 +293,6 @@ button { color: inherit; }
   letter-spacing: .03em;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-}
-
-.cover-year {
-  position: absolute;
-  top: 9px;
-  right: 9px;
 }
 
 .cover-volume {
@@ -332,6 +325,10 @@ button { color: inherit; }
   margin-top: var(--space-1);
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+.book-author--solo {
+  margin-top: var(--space-3);
 }
 
 .cover-progress {

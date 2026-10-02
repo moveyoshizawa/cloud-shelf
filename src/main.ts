@@ -8,7 +8,6 @@ type Route =
   | { name: "reader"; id: string };
 
 type SortMode = "title" | "author" | "added";
-type LabelMode = "off" | "title" | "full";
 
 type LibraryEntry =
   | { type: "series"; id: string; title: string; author: string; series: Series; displayBook: Book }
@@ -17,9 +16,16 @@ type LibraryEntry =
 let searchQuery = "";
 let sortMode: SortMode = "title";
 let menuOpen = false;
+
+const legacyLabelMode = localStorage.getItem("cloud-shelf-books:labels");
+let showTitleLabel =
+  localStorage.getItem("cloud-shelf-books:show-title") === "true" ||
+  (localStorage.getItem("cloud-shelf-books:show-title") === null &&
+    (legacyLabelMode === "title" || legacyLabelMode === "full"));
+let showAuthorLabel =
+  localStorage.getItem("cloud-shelf-books:show-author") === "true" ||
+  (localStorage.getItem("cloud-shelf-books:show-author") === null && legacyLabelMode === "full");
 let showVolume = localStorage.getItem("cloud-shelf-books:show-volume") !== "false";
-let showYear = localStorage.getItem("cloud-shelf-books:show-year") === "true";
-let labelMode = (localStorage.getItem("cloud-shelf-books:labels") as LabelMode | null) ?? "off";
 
 const CONTINUE_LIMIT = 6;
 
@@ -54,20 +60,16 @@ function titleLine(book: Book): string {
 }
 
 function coverInfo(book: Book, totalVolumes?: number): string {
-  const badges: string[] = [];
+  if (!showVolume || !book.volume || !totalVolumes) return "";
 
-  if (showYear && book.year) {
-    badges.push('<span class="cover-year">' + book.year + '</span>');
-  }
+  const current = String(book.volume).padStart(2, "0");
+  const total = String(totalVolumes).padStart(2, "0");
 
-  if (showVolume && book.volume && totalVolumes) {
-    const current = String(book.volume).padStart(2, "0");
-    const total = String(totalVolumes).padStart(2, "0");
-    badges.push('<span class="cover-volume">' + current + "/" + total + '</span>');
-  }
-
-  if (!badges.length) return "";
-  return '<span class="cover-info" aria-hidden="true">' + badges.join("") + '</span>';
+  return (
+    '<span class="cover-info" aria-hidden="true">' +
+      '<span class="cover-volume">' + current + "/" + total + '</span>' +
+    '</span>'
+  );
 }
 
 function progressMarkup(book: Book): string {
@@ -96,12 +98,12 @@ function fallbackTitleMarkup(book: Book): string {
 }
 
 function labelMarkup(book: Book): string {
-  if (labelMode === "off") return "";
+  if (!showTitleLabel && !showAuthorLabel) return "";
 
   return (
     '<span class="book-labels">' +
-      '<span class="book-title">' + titleLine(book) + '</span>' +
-      (labelMode === "full" ? '<span class="book-author">' + book.author + '</span>' : '') +
+      (showTitleLabel ? '<span class="book-title">' + titleLine(book) + '</span>' : '') +
+      (showAuthorLabel ? '<span class="book-author' + (showTitleLabel ? '' : ' book-author--solo') + '">' + book.author + '</span>' : '') +
     '</span>'
   );
 }
@@ -242,16 +244,10 @@ function menuMarkup(): string {
       '<span class="menu-check" aria-hidden="true">' + (sortMode === mode ? "✓" : "") + '</span>' +
     '</button>';
 
-  const toggleOption = (setting: "volume" | "year", label: string, checked: boolean) =>
+  const toggleOption = (setting: "title" | "author" | "volume", label: string, checked: boolean) =>
     '<button class="menu-row" type="button" data-setting="' + setting + '">' +
       '<span>' + label + '</span>' +
       '<span class="menu-check" aria-hidden="true">' + (checked ? "✓" : "") + '</span>' +
-    '</button>';
-
-  const labelOption = (mode: LabelMode, label: string) =>
-    '<button class="menu-row" type="button" data-label-mode="' + mode + '">' +
-      '<span>' + label + '</span>' +
-      '<span class="menu-check" aria-hidden="true">' + (labelMode === mode ? "✓" : "") + '</span>' +
     '</button>';
 
   return (
@@ -259,16 +255,12 @@ function menuMarkup(): string {
       '<div class="menu-label">Sort by</div>' +
       sortOption("title", "Title") +
       sortOption("author", "Author") +
-      sortOption("added", "Recently Added") +
+      sortOption("added", "Newest") +
       '<div class="menu-separator"></div>' +
       '<div class="menu-label">Labels</div>' +
-      labelOption("off", "Off") +
-      labelOption("title", "Title") +
-      labelOption("full", "Title & Author") +
-      '<div class="menu-separator"></div>' +
-      '<div class="menu-label">Cover Info</div>' +
+      toggleOption("title", "Title", showTitleLabel) +
+      toggleOption("author", "Author", showAuthorLabel) +
       toggleOption("volume", "Volume Number", showVolume) +
-      toggleOption("year", "Publication Year", showYear) +
     '</div>'
   );
 }
@@ -434,28 +426,21 @@ function wireInteractions(): void {
     });
   });
 
-  document.querySelectorAll<HTMLButtonElement>("[data-label-mode]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const mode = button.dataset.labelMode as LabelMode | undefined;
-      if (mode) {
-        labelMode = mode;
-        localStorage.setItem("cloud-shelf-books:labels", mode);
-      }
-      menuOpen = false;
-      render();
-    });
-  });
-
   document.querySelectorAll<HTMLButtonElement>("[data-setting]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.dataset.setting === "title") {
+        showTitleLabel = !showTitleLabel;
+        localStorage.setItem("cloud-shelf-books:show-title", String(showTitleLabel));
+      }
+
+      if (button.dataset.setting === "author") {
+        showAuthorLabel = !showAuthorLabel;
+        localStorage.setItem("cloud-shelf-books:show-author", String(showAuthorLabel));
+      }
+
       if (button.dataset.setting === "volume") {
         showVolume = !showVolume;
         localStorage.setItem("cloud-shelf-books:show-volume", String(showVolume));
-      }
-
-      if (button.dataset.setting === "year") {
-        showYear = !showYear;
-        localStorage.setItem("cloud-shelf-books:show-year", String(showYear));
       }
 
       render();
