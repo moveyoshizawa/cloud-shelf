@@ -22,6 +22,7 @@ input { font: inherit; }
 button { color: inherit; }
 
 .app-shell {
+  --book-card-width: clamp(150px, 17vw, 190px);
   position: relative;
   width: min(100%, var(--content-width));
   margin: 0 auto;
@@ -134,7 +135,7 @@ button { color: inherit; }
 .continue-track {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: clamp(170px, 21vw, 220px);
+  grid-auto-columns: var(--book-card-width);
   justify-content: start;
   gap: var(--space-5);
   overflow-x: auto;
@@ -189,10 +190,6 @@ button { color: inherit; }
   box-shadow: 0 13px 30px rgba(25,24,21,.11);
 }
 
-.book-cover--continue .book-art {
-  aspect-ratio: 4 / 5;
-}
-
 .cover-shape {
   position: absolute;
   display: block;
@@ -220,14 +217,9 @@ button { color: inherit; }
 
 .cover-info {
   position: absolute;
-  top: 9px;
-  left: 9px;
-  right: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  inset: 0;
   z-index: 6;
+  pointer-events: none;
 }
 
 .cover-year,
@@ -247,8 +239,17 @@ button { color: inherit; }
   -webkit-backdrop-filter: blur(12px);
 }
 
+.cover-year {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+}
+
 .cover-volume {
-  margin-left: auto;
+  position: absolute;
+  left: 9px;
+  bottom: 9px;
+  margin: 0;
 }
 
 .book-title,
@@ -264,10 +265,6 @@ button { color: inherit; }
   font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.018em;
-}
-
-.book-cover--continue .book-title {
-  font-size: 17px;
 }
 
 .book-author {
@@ -296,17 +293,18 @@ button { color: inherit; }
 .library-grid,
 .book-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
-  gap: var(--space-8) var(--space-5);
+  grid-template-columns: repeat(auto-fill, var(--book-card-width));
+  gap: var(--space-8) calc(var(--space-5) + 10px);
   align-items: start;
+  justify-content: start;
 }
 
 .stack-art-wrap {
   position: relative;
   display: block;
-  width: calc(100% - 10px);
+  width: 100%;
   aspect-ratio: 2 / 3;
-  margin-right: 10px;
+  overflow: visible;
 }
 
 .stack-front,
@@ -570,14 +568,18 @@ button { color: inherit; }
     margin-bottom: var(--space-7, 28px);
   }
 
+  .app-shell {
+    --book-card-width: calc((100vw - (var(--space-4) * 3)) / 2);
+  }
+
   .continue-track {
-    grid-auto-columns: min(58vw, 205px);
+    grid-auto-columns: var(--book-card-width);
     gap: var(--space-4);
   }
 
   .library-grid,
   .book-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, var(--book-card-width));
     gap: var(--space-8) var(--space-4);
   }
 
